@@ -17,10 +17,10 @@ public class LocationWebSocketPublisher {
     public void publish(LocationUpdatedEvent event) {
 
         messagingTemplate.convertAndSend(
-                "/topic/location",
+                "/topic/location/" + event.userId(),
                 event
         );
 
-        System.out.println("Published location to websocket: " + event.userId());
+        System.out.println("Published location to websocket topic: /topic/location/" + event.userId());
     }
 }

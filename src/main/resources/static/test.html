@@ -7,6 +7,8 @@
 
 <h2>Location Updates</h2>
 
+<input id="userId" placeholder="Enter user id"/>
+
 <button onclick="connect()">Connect</button>
 
 <pre id="messages"></pre>
@@ -20,6 +22,9 @@
 
     function connect() {
 
+        const userId =
+            document.getElementById("userId").value;
+
         const socket = new SockJS('/ws');
 
         stompClient = Stomp.over(socket);
@@ -29,11 +34,14 @@
             document.getElementById("messages").innerHTML +=
                 "Connected\n";
 
-            stompClient.subscribe('/topic/location', function (message) {
+            stompClient.subscribe(
+                '/topic/location/' + userId,
+                function (message) {
 
-                document.getElementById("messages").innerHTML +=
-                    message.body + "\n";
-            });
+                    document.getElementById("messages").innerHTML +=
+                        message.body + "\n";
+                }
+            );
         });
     }
 
