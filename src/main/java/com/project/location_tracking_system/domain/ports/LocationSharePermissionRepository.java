@@ -16,4 +16,6 @@ public interface LocationSharePermissionRepository {
     LocationSharePermission findByOwnerAndViewer(String ownerUserId, String viewerUserId);
 
     List<LocationSharePermission> findByOwnerAndStatus(String ownerUserId, ShareStatus status);
+
+    boolean hasAcceptedPermission(String ownerUserId, String viewerUserId);
 }

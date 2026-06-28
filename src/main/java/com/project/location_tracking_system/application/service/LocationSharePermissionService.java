@@ -3,6 +3,8 @@ package com.project.location_tracking_system.application.service;
 import com.project.location_tracking_system.domain.model.LocationSharePermission;
 import com.project.location_tracking_system.domain.model.ShareStatus;
 import com.project.location_tracking_system.domain.ports.LocationSharePermissionRepository;
+import com.project.location_tracking_system.exception.InvalidRequestException;
+import com.project.location_tracking_system.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,7 +12,7 @@ import java.util.List;
 @Service
 public class LocationSharePermissionService {
 
-    private LocationSharePermissionRepository repository;
+    final private LocationSharePermissionRepository repository;
 
     public LocationSharePermissionService(LocationSharePermissionRepository repository) {
         this.repository = repository;
@@ -19,7 +21,7 @@ public class LocationSharePermissionService {
     public LocationSharePermission createPermission(String ownerUserId, String viewerUserId) {
 
         if(ownerUserId.equals(viewerUserId)) {
-            throw new IllegalArgumentException("User cannot share location with themselves");
+            throw new InvalidRequestException("User cannot share location with themselves");
         }
 
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
@@ -63,11 +65,11 @@ public class LocationSharePermissionService {
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
         if (existing == null) {
-            throw new IllegalArgumentException("Permission request not found");
+            throw new ResourceNotFoundException("Permission request not found");
         }
 
         if (existing.status() != ShareStatus.PENDING) {
-            throw new IllegalArgumentException("Permission is not pending");
+            throw new InvalidRequestException("Permission is not pending");
         }
 
         return repository.save(
@@ -85,11 +87,11 @@ public class LocationSharePermissionService {
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
         if (existing == null) {
-            throw new IllegalArgumentException("Permission request not found");
+            throw new ResourceNotFoundException("Permission request not found");
         }
 
         if (existing.status() != ShareStatus.PENDING) {
-            throw new IllegalArgumentException("Permission is not pending");
+            throw new InvalidRequestException("Permission is not pending");
         }
 
         return repository.save(
@@ -107,11 +109,11 @@ public class LocationSharePermissionService {
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
         if(existing == null) {
-            throw new IllegalArgumentException("Permission does not exist");
+            throw new ResourceNotFoundException("Permission does not exist");
         }
 
         if(existing.status() != ShareStatus.ACCEPTED) {
-            throw new IllegalArgumentException("Only accepted permissions can be revoked");
+            throw new InvalidRequestException("Only accepted permissions can be revoked");
         }
 
         return repository.save(

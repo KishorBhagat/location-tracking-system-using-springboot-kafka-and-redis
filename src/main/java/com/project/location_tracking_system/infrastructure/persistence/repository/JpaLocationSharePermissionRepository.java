@@ -14,4 +14,6 @@ public interface JpaLocationSharePermissionRepository extends JpaRepository<Loca
     Optional<LocationSharePermissionEntity> findByOwnerUserIdAndViewerUserId(String ownerUserId, String viewerUserId);
 
     List<LocationSharePermissionEntity> findByOwnerUserIdAndStatus(String ownerUserId, ShareStatus status);
+
+    boolean existsByOwnerUserIdAndViewerUserIdAndStatus(String ownerUserId, String viewerUserId, ShareStatus status);
 }
