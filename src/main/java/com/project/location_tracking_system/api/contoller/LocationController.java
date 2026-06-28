@@ -31,9 +31,9 @@ public class LocationController {
         return ResponseEntity.accepted().build();
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<Location> getLocation(@PathVariable String userId) {
-        Location location = locationService.getLocation(userId);
+    @GetMapping("/{ownerUserId}")
+    public ResponseEntity<Location> getLocation(@PathVariable String ownerUserId, @RequestParam String viewerUserId) {
+        Location location = locationService.getLocation(ownerUserId, viewerUserId);
 
         return ResponseEntity.ok(location);
     }
