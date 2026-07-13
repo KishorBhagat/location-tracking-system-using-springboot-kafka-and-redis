@@ -28,7 +28,6 @@ public class RedisLocationRepository implements LocationRepository {
     @Override
     public Location findByUserId(String userId) {
         Object value = redisTemplate.opsForValue().get(KEY_PREFIX + userId);
-
         return (Location) value;
     }
 }
