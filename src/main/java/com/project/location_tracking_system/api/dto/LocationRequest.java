@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotNull;
 public record
 LocationRequest(
 
-        @NotBlank
-        String userId,
-
         @NotNull
         Double latitude,
 
