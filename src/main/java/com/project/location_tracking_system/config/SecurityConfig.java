@@ -31,7 +31,10 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/auth/register",
-                                "/auth/login"
+                                "/auth/login",
+                                "/ws/**",
+                                "/test.html",
+                                "/users/*"
                         ).permitAll()
 
                         .anyRequest().authenticated()
@@ -40,8 +43,7 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
-                )
-                .httpBasic(Customizer.withDefaults());
+                );
 
         return http.build();
     }

@@ -49,3 +49,11 @@ server:
 jwt:
   secret: MyVerySecretKeyForLocationTrackingSystemWhichShouldBeLongEnough123456
   expiration: 86400000
+
+logging:
+  level:
+    org:
+      springframework:
+        messaging=TRACE:
+      web:
+        socket=TRACE:

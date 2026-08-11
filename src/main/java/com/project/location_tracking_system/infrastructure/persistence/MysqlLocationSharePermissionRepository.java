@@ -93,4 +93,18 @@ public class MysqlLocationSharePermissionRepository implements LocationSharePerm
     public boolean hasAcceptedPermission(String ownerUserId, String viewerUserId) {
         return repository.existsByOwnerUserIdAndViewerUserIdAndStatus(ownerUserId, viewerUserId, ShareStatus.ACCEPTED);
     }
+
+    @Override
+    public List<LocationSharePermission> findAcceptedViewers(String ownerUserId) {
+        return repository.findByOwnerUserIdAndStatus(ownerUserId, ShareStatus.ACCEPTED)
+                .stream()
+                .map(entity -> new LocationSharePermission(
+                                entity.getId(),
+                                entity.getOwnerUserId(),
+                                entity.getViewerUserId(),
+                                entity.getStatus()
+                        )
+                )
+                .toList();
+    }
 }

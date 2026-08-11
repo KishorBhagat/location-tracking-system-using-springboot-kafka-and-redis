@@ -1,51 +1,411 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Location WebSocket Test</title>
+
+    <meta charset="UTF-8">
+
+    <title>Location Tracking Dashboard</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,Helvetica,sans-serif;
+        }
+
+        body{
+
+            background:#f3f5fa;
+            padding:30px;
+        }
+
+        h1{
+
+            text-align:center;
+            margin-bottom:30px;
+        }
+
+        .container{
+
+            max-width:1200px;
+            margin:auto;
+        }
+
+        .top{
+
+            display:grid;
+            grid-template-columns:1fr 320px;
+            gap:20px;
+        }
+
+        .panel{
+
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            box-shadow:0 5px 15px rgba(0,0,0,.1);
+        }
+
+        input{
+
+            width:100%;
+            padding:12px;
+            border-radius:8px;
+            border:1px solid #ccc;
+            margin-bottom:15px;
+        }
+
+        button{
+
+            width:100%;
+            padding:12px;
+            background:#2563eb;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:15px;
+        }
+
+        button:hover{
+
+            background:#1d4ed8;
+        }
+
+        .status{
+
+            margin-top:15px;
+            font-weight:bold;
+        }
+
+        .connected{
+
+            color:green;
+        }
+
+        .disconnected{
+
+            color:red;
+        }
+
+        .viewer{
+
+            line-height:2;
+        }
+
+        .viewer span{
+
+            color:#2563eb;
+            font-weight:bold;
+        }
+
+        h2{
+
+            margin:35px 0 20px;
+        }
+
+        .cards{
+
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+            gap:20px;
+        }
+
+        .card{
+
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            box-shadow:0 5px 15px rgba(0,0,0,.08);
+        }
+
+        .card h3{
+
+            color:#2563eb;
+            margin-bottom:15px;
+        }
+
+        .row{
+
+            display:flex;
+            justify-content:space-between;
+            margin:10px 0;
+        }
+
+        .label{
+
+            font-weight:bold;
+        }
+
+        .logs{
+
+            margin-top:35px;
+            background:#111827;
+            color:#8ef58f;
+            border-radius:12px;
+            padding:15px;
+            height:180px;
+            overflow:auto;
+            font-size:13px;
+        }
+
+    </style>
+
 </head>
+
 <body>
 
-<h2>Location Updates</h2>
+<div class="container">
 
-<input id="userId" placeholder="Enter user id"/>
+    <h1>📍 Live Location Tracking Dashboard</h1>
 
-<button onclick="connect()">Connect</button>
+    <div class="top">
 
-<pre id="messages"></pre>
+        <div class="panel">
+
+            <input
+                    id="token"
+                    placeholder="Paste JWT here">
+
+            <button onclick="connect()">
+                Connect
+            </button>
+
+            <div
+                    id="status"
+                    class="status disconnected">
+
+                🔴 Disconnected
+
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <h3>Logged In Viewer</h3>
+
+            <div class="viewer">
+
+                User ID :
+                <span id="viewerId">-</span>
+
+                <br>
+
+                Username :
+                <span id="viewerName">-</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <h2>Live Owners</h2>
+
+    <div
+            id="cards"
+            class="cards">
+
+    </div>
+
+    <div
+            id="logs"
+            class="logs">
+
+    </div>
+
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
 <script>
 
-    let stompClient = null;
 
-    function connect() {
+    let stompClient=null;
 
-        const userId =
-            document.getElementById("userId").value;
+    const ownerCards = {};
 
-        const socket = new SockJS('/ws');
+    const usernameCache = {};
 
-        stompClient = Stomp.over(socket);
+    function log(message){
 
-        stompClient.connect({}, function () {
+        const logs=document.getElementById("logs");
 
-            document.getElementById("messages").innerHTML +=
-                "Connected\n";
+        logs.innerHTML+=message+"<br>";
 
-            stompClient.subscribe(
-                '/topic/location/' + userId,
-                function (message) {
+        logs.scrollTop=logs.scrollHeight;
 
-                    document.getElementById("messages").innerHTML +=
-                        message.body + "\n";
-                }
+    }
+
+    function decodeJwt(token){
+
+        const payload=token.split('.')[1];
+
+        return JSON.parse(atob(payload));
+
+    }
+
+    function connect(){
+
+        const token=document.getElementById("token").value;
+
+        const jwt=decodeJwt(token);
+
+        document.getElementById("viewerId").innerText=jwt.sub;
+
+        document.getElementById("viewerName").innerText=jwt.username;
+
+        const socket=new SockJS(
+            "http://localhost:8080/ws?token="+token
+        );
+
+        stompClient=Stomp.over(socket);
+
+        stompClient.debug=function(){};
+
+        stompClient.connect(
+            {},
+            function(){
+
+                document.getElementById("status").innerHTML="🟢 Connected";
+
+                document.getElementById("status").className="status connected";
+
+                log("Connected as "+jwt.sub);
+
+                stompClient.subscribe(
+
+                    "/user/queue/location",
+
+                    function(message){
+
+                        const data=JSON.parse(message.body);
+
+                        updateOwnerCard(data);
+
+                    }
+
+                );
+
+            },
+
+            function(error){
+
+                log(error);
+
+            }
+
+        );
+
+    }
+
+    async function updateOwnerCard(location){
+
+        const owner = location.userId;
+
+        const username = await getUsername(owner);
+
+        if(!ownerCards[owner]){
+
+            const card = document.createElement("div");
+
+            card.className = "card";
+
+            card.id = "card-" + owner;
+
+            card.innerHTML = `
+
+            <h3>${username} (User ID: ${owner})</h3>
+
+            <div class="row">
+
+                <span class="label">Latitude</span>
+
+                <span id="lat-${owner}"></span>
+
+            </div>
+
+            <div class="row">
+
+                <span class="label">Longitude</span>
+
+                <span id="lon-${owner}"></span>
+
+            </div>
+
+            <div class="row">
+
+                <span class="label">Updated</span>
+
+                <span id="time-${owner}"></span>
+
+            </div>
+
+            `;
+
+            document
+                .getElementById("cards")
+                .appendChild(card);
+
+            ownerCards[owner] = true;
+
+        }
+
+        document.getElementById("lat-" + owner)
+            .innerText = location.latitude;
+
+        document.getElementById("lon-" + owner)
+            .innerText = location.longitude;
+
+        document.getElementById("time-" + owner)
+            .innerText = new Date(location.timestamp)
+            .toLocaleTimeString();
+
+        log(
+            "Location received from "
+            + username +
+            " (" + owner + ")"
+        );
+
+    }
+
+    async function getUsername(userId){
+
+        if(usernameCache[userId]){
+            return usernameCache[userId];
+        }
+
+        try{
+
+            const response = await fetch(
+                "http://localhost:8080/users/" + userId
             );
-        });
+
+            if(!response.ok){
+                return userId;
+            }
+
+            const user = await response.json();
+
+            usernameCache[userId] = user.username;
+
+            return user.username;
+
+        }catch(e){
+
+            console.log(e);
+
+            return userId;
+        }
     }
 
 </script>
 
 </body>
+
 </html>
