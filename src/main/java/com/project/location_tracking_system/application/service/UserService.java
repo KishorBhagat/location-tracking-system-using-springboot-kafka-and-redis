@@ -6,6 +6,7 @@ import com.project.location_tracking_system.domain.ports.TokenService;
 import com.project.location_tracking_system.domain.ports.UserRepository;
 import com.project.location_tracking_system.exception.InvalidCredentialsException;
 import com.project.location_tracking_system.exception.ResourceAlreadyExistsException;
+import com.project.location_tracking_system.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -73,6 +74,17 @@ public class UserService {
                 user.username(),
                 token
         );
+    }
+
+    public User getByUserId(String userId) {
+
+        User user = repository.findByUserId(userId);
+
+        if(user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        return user;
     }
 }
 

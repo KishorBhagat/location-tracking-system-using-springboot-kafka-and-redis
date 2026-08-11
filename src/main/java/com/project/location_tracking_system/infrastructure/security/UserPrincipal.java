@@ -1,6 +1,8 @@
 package com.project.location_tracking_system.infrastructure.security;
 
-public class UserPrincipal {
+import java.security.Principal;
+
+public class UserPrincipal implements Principal {
 
     private final String userId;
 
@@ -17,5 +19,10 @@ public class UserPrincipal {
 
     public String getUsername() {
         return username;
+    }
+
+    @Override
+    public String getName() {
+        return userId;
     }
 }
