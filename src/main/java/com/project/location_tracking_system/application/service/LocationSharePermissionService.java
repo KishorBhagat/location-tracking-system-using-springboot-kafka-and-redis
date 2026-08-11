@@ -3,6 +3,7 @@ package com.project.location_tracking_system.application.service;
 import com.project.location_tracking_system.domain.model.LocationSharePermission;
 import com.project.location_tracking_system.domain.model.ShareStatus;
 import com.project.location_tracking_system.domain.ports.LocationSharePermissionRepository;
+import com.project.location_tracking_system.domain.ports.UserRepository;
 import com.project.location_tracking_system.exception.InvalidRequestException;
 import com.project.location_tracking_system.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
@@ -14,11 +15,16 @@ public class LocationSharePermissionService {
 
     final private LocationSharePermissionRepository repository;
 
-    public LocationSharePermissionService(LocationSharePermissionRepository repository) {
+    final private UserRepository userRepository;
+
+    public LocationSharePermissionService(LocationSharePermissionRepository repository, UserRepository userRepository) {
         this.repository = repository;
+        this.userRepository = userRepository;
     }
 
     public LocationSharePermission createPermission(String ownerUserId, String viewerUserId) {
+
+        validateUsersExist(ownerUserId, viewerUserId);
 
         if(ownerUserId.equals(viewerUserId)) {
             throw new InvalidRequestException("User cannot share location with themselves");
@@ -62,6 +68,8 @@ public class LocationSharePermissionService {
 
     public LocationSharePermission acceptPermission(String ownerUserId, String viewerUserId) {
 
+        validateUsersExist(ownerUserId, viewerUserId);
+
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
         if (existing == null) {
@@ -84,6 +92,8 @@ public class LocationSharePermissionService {
 
     public LocationSharePermission rejectPermission(String ownerUserId, String viewerUserId) {
 
+        validateUsersExist(ownerUserId, viewerUserId);
+
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
         if (existing == null) {
@@ -105,6 +115,8 @@ public class LocationSharePermissionService {
     }
 
     public LocationSharePermission revokePermission(String ownerUserId, String viewerUserId) {
+
+        validateUsersExist(ownerUserId, viewerUserId);
 
         LocationSharePermission existing = repository.findByOwnerAndViewer(ownerUserId, viewerUserId);
 
@@ -132,5 +144,20 @@ public class LocationSharePermissionService {
                 ownerUserId,
                 ShareStatus.PENDING
         );
+    }
+
+    private void validateUsersExist(String ownerUserId, String viewerUserId) {
+
+        if (!userRepository.existsByUserId(ownerUserId)) {
+            throw new ResourceNotFoundException(
+                    "Owner not found: " + ownerUserId
+            );
+        }
+
+        if (!userRepository.existsByUserId(viewerUserId)) {
+            throw new ResourceNotFoundException(
+                    "Viewer not found: " + viewerUserId
+            );
+        }
     }
 }
